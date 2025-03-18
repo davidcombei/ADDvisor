@@ -1,5 +1,4 @@
 import torch.nn as nn
-import numpy as np
 import torch
 from audioprocessor import AudioProcessor
 import torch.nn.functional as F
@@ -74,7 +73,7 @@ class ADDvisor(nn.Module):
         # self.deconv5 = nn.ConvTranspose2d(256, 1, (3, 3), (1, 2),1)
 
 
-        #self.sigmoid = nn.Sigmoid()
+        self.sigmoid = nn.Sigmoid()
 
 
 
@@ -107,10 +106,10 @@ class ADDvisor(nn.Module):
 
 
         #print(self.time_steps_stft)
-        #mask = self.sigmoid(x)
+        mask = self.sigmoid(x)
         # if not self.training:
         #     mask = (mask > self.threshold).float()
 
-        return x
+        return mask
 
 

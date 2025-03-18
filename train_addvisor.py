@@ -3,11 +3,15 @@ from addvisor import ADDvisor
 import torch
 from audioprocessor import AudioProcessor
 from loss_function import LMACLoss
+from classifier_embedder import TorchLogReg, TorchScaler, thresh
 import os
-from classifier_embedder import thresh
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
 audio_processor = AudioProcessor()
 addvisor = ADDvisor()
 loss = LMACLoss()
+torch_log_reg = TorchLogReg().to(device)
+torch_scaler = TorchScaler().to(device)
 
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -32,18 +36,19 @@ def train_addvisor(model, num_epochs, loss_fn, directory):
                 waveform,sr = audio_processor.load_audio(audio_path)
                 X_stft, X_stft_power = audio_processor.compute_stft(waveform)
                 X_stft_phase = torch.angle(X_stft)
-                X_stft_power = X_stft_power.unsqueeze(0).to(device) # for batch 1
+                X_stft_power = X_stft_power.unsqueeze(0).to(device)
                 X_stft_phase = X_stft_phase.unsqueeze(0).to(device)
                 mask = model(features)
-                print(mask)
-                raw_pred = torch.tensor(audio_processor.compute_forward_classifier(features)).to(device)
-                class_pred = 1.0 if raw_pred.item() > thresh - 5e-3 else 0.0
-                class_pred = torch.tensor(class_pred, dtype=torch.float32).to(device)
+                #print(mask)
+                feats = torch.mean(features.squeeze(0), dim=0)
+                yhat1_logits, yhat1_probs = torch_log_reg(feats)
+                yhat1_probs = torch_scaler(yhat1_probs)
+                class_pred = torch.tensor([1.0]) if yhat1_probs.item() > thresh - 5e-3 else torch.tensor([0.0])
                 print('prediction yhat1:', class_pred)
                 loss_value = loss_fn.loss_function(mask, X_stft_power,X_stft_phase, class_pred)
-
                 optimizer.zero_grad()
                 loss_value.backward()
+                print("mask.grad:", mask.grad)
                 optimizer.step()
 
                 progress_bar.set_description(f"epoch {epoch+1}/{num_epochs} - loss: {loss_value.item():.4f}")

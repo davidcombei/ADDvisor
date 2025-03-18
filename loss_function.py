@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import torchaudio
 from ADDvisor import audioprocessor
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -26,6 +27,7 @@ class LMACLoss():
 
 
         Tmax = xhat.shape[1]
+
         relevant_mask_mag = xhat * X_stft_power[:, :Tmax, :]  # the relevant parts of the spectrogram
         irelevant_mask_mag = (1 - xhat) * X_stft_power[:, :Tmax, :] # the irelevant parts of the spectrogram
         relevant_mask = relevant_mask_mag * torch.exp(1j * X_stft_phase[:, :Tmax, :])
@@ -37,23 +39,41 @@ class LMACLoss():
         istft_irelevant_mask = istft_irelevant_mask.squeeze(0)
         relevant_mask_waveform = audio_processor.extract_features_istft(istft_relevant_mask)
         irelevant_mask_waveform = audio_processor.extract_features_istft(istft_irelevant_mask)
+
+
+
+        # print(irelevant_mask_waveform.shape)
+        # relevant_mask_waveform = relevant_mask_waveform.squeeze(0)
+        # irelevant_mask_waveform = irelevant_mask_waveform.squeeze(0)
+        # relevant_mask_waveform = torch.mean(relevant_mask_waveform, dim=0)
+        # irelevant_mask_waveform = torch.mean(irelevant_mask_waveform, dim=0)
+        # lin = nn.Linear(1920,1).to(device)
+        # for name, param in lin.named_parameters():
+        #     param.requires_grad = False
+        # relevant_mask_probs = lin(relevant_mask_waveform)
+        # irelevant_mask_probs = lin(irelevant_mask_waveform)
+        # relevant_mask_probs = torch.sigmoid(relevant_mask_probs)
+        # irelevant_mask_probs = torch.sigmoid(irelevant_mask_probs)
+
+
         relevant_mask_feats = torch.mean(relevant_mask_waveform.squeeze(0), dim=0)
         irelevant_mask_feats = torch.mean(irelevant_mask_waveform.squeeze(0), dim=0)
         relevant_mask_logits, relevant_mask_probs = torch_logreg(relevant_mask_feats)
         irelevant_mask_logits, irelevant_mask_probs = torch_logreg(irelevant_mask_feats)
-        relevant_mask_probs = torch_scaler(relevant_mask_probs)
-        irelevant_mask_probs = torch_scaler(irelevant_mask_probs)
+        relevant_mask_logits = torch_scaler(relevant_mask_logits)
+        irelevant_mask_logits = torch_scaler(irelevant_mask_logits)
 
-        l_in = F.binary_cross_entropy_with_logits(relevant_mask_probs, class_pred.unsqueeze(0))
-        l_out = -F.binary_cross_entropy_with_logits(irelevant_mask_probs, class_pred.unsqueeze(0))
+
+        l_in = F.binary_cross_entropy_with_logits(relevant_mask_logits, class_pred.to(device))
+        l_out = -F.binary_cross_entropy_with_logits(irelevant_mask_logits, class_pred.to(device))
         ao_loss = self.l_in_w * l_in + self.l_out_w * l_out
 
 
-        #reg_l1 = xhat.abs().mean((-1, -2)) * self.reg_w_l1
+        # reg_l1 = xhat.abs().mean((-1, -2)) * self.reg_w_l1
         # tv_h = torch.sum(torch.abs(xhat[:, :, :-1] - xhat[:, :, 1:]))  # horizontal differences
         # tv_w = torch.sum(torch.abs(xhat[:, :-1, :] - xhat[:, 1:, :]))  # vertical differences
         # reg_tv = (tv_h + tv_w) * self.reg_w_tv
-        #reg_loss = reg_l1 #+ reg_tv
+        # reg_loss = reg_l1 #+ reg_tv
 
-        total_loss = ao_loss# + reg_loss
+        total_loss = ao_loss #+ reg_loss
         return total_loss
