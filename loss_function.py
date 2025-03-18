@@ -42,26 +42,25 @@ class LMACLoss():
 
 
 
-        # print(irelevant_mask_waveform.shape)
-        # relevant_mask_waveform = relevant_mask_waveform.squeeze(0)
-        # irelevant_mask_waveform = irelevant_mask_waveform.squeeze(0)
-        # relevant_mask_waveform = torch.mean(relevant_mask_waveform, dim=0)
-        # irelevant_mask_waveform = torch.mean(irelevant_mask_waveform, dim=0)
-        # lin = nn.Linear(1920,1).to(device)
-        # for name, param in lin.named_parameters():
-        #     param.requires_grad = False
-        # relevant_mask_probs = lin(relevant_mask_waveform)
-        # irelevant_mask_probs = lin(irelevant_mask_waveform)
-        # relevant_mask_probs = torch.sigmoid(relevant_mask_probs)
-        # irelevant_mask_probs = torch.sigmoid(irelevant_mask_probs)
+        print(irelevant_mask_waveform.shape)
+        relevant_mask_waveform = relevant_mask_waveform.squeeze(0)
+        irelevant_mask_waveform = irelevant_mask_waveform.squeeze(0)
+        relevant_mask_waveform = torch.mean(relevant_mask_waveform, dim=0)
+        irelevant_mask_waveform = torch.mean(irelevant_mask_waveform, dim=0)
+        lin = nn.Linear(1920,1).to(device)
+        for name, param in lin.named_parameters():
+            param.requires_grad = False
+        relevant_mask_logits = lin(relevant_mask_waveform)
+        irelevant_mask_logits = lin(irelevant_mask_waveform)
 
 
-        relevant_mask_feats = torch.mean(relevant_mask_waveform.squeeze(0), dim=0)
-        irelevant_mask_feats = torch.mean(irelevant_mask_waveform.squeeze(0), dim=0)
-        relevant_mask_logits, relevant_mask_probs = torch_logreg(relevant_mask_feats)
-        irelevant_mask_logits, irelevant_mask_probs = torch_logreg(irelevant_mask_feats)
-        relevant_mask_logits = torch_scaler(relevant_mask_logits)
-        irelevant_mask_logits = torch_scaler(irelevant_mask_logits)
+
+        # relevant_mask_feats = torch.mean(relevant_mask_waveform.squeeze(0), dim=0)
+        # irelevant_mask_feats = torch.mean(irelevant_mask_waveform.squeeze(0), dim=0)
+        # relevant_mask_logits, relevant_mask_probs = torch_logreg(relevant_mask_feats)
+        # irelevant_mask_logits, irelevant_mask_probs = torch_logreg(irelevant_mask_feats)
+        # relevant_mask_logits = torch_scaler(relevant_mask_logits)
+        # irelevant_mask_logits = torch_scaler(irelevant_mask_logits)
 
 
         l_in = F.binary_cross_entropy_with_logits(relevant_mask_logits, class_pred.to(device))
