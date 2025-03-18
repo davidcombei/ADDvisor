@@ -101,7 +101,6 @@ class AudioProcessor:
                             win_length=self.win_length,
                             return_complex=True # keep the magnitude and phase information
                             )
-        #compute the stft power , whihc is the magnitude raise to power of 0.5 ( LMAC model )
         X_stft_power = torch.abs(X_stft) ** 2
 
         return  X_stft, X_stft_power
