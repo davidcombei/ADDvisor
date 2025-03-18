@@ -2,6 +2,7 @@ import joblib
 from transformers import Wav2Vec2Model, AutoFeatureExtractor
 import torch.nn as nn
 import torch
+from sklearn.preprocessing import MinMaxScaler
 
 #####################
 ### LOAD WAV2VEC + LogReg
@@ -9,28 +10,36 @@ import torch
 classifier,scaler, thresh = joblib.load(r'C:\Users\david\PycharmProjects\David2\model\logreg_margin_pruning_ALL_with_scaler_threshold.joblib')
 processor = AutoFeatureExtractor.from_pretrained("facebook/wav2vec2-xls-r-2b")
 wav2vec2 = Wav2Vec2Model.from_pretrained(r"C:\Users\david\PycharmProjects\David2\model\wav2vec2-xls-r-2b_truncated")
-
+for param in wav2vec2.parameters():
+    param.requires_grad = False
 
 
 class TorchLogReg(nn.Module):
-    def __init__(self,coef,intercept):
+    def __init__(self):
         super(TorchLogReg,self).__init__()
 
-        
-
-        if coef.dim() == 1:
-            coef = coef.unsqueeze(0)
-
-        n_features = coef.size(1)
-        self.linear = nn.Linear(n_features, 1)
-        self.linear.weight = nn.Parameter(coef.clone(), requires_grad=False)
-        self.linear.bias = nn.Parameter(intercept.clone(), requires_grad=False)
+        self.linear = nn.Linear(1920, 1)
+        self.linear.weight = nn.Parameter(torch.tensor(classifier.coef_,dtype=torch.float32), requires_grad=False)
+        self.linear.bias = nn.Parameter(torch.tensor(classifier.intercept_,dtype=torch.float32), requires_grad=False)
 
 
     def forward(self,x):
         logits = self.linear(x)
         probs = torch.sigmoid(logits)
 
-        return probs
+        return logits, probs
+
+
+#print(TorchLogReg())
+
+class TorchScaler(nn.Module):
+    def __init__(self):
+        super(TorchScaler,self).__init__()
+        self.register_buffer("min_", torch.tensor(scaler.min_, dtype=torch.float32, requires_grad=False))
+        self.register_buffer("scale", torch.tensor(scaler.scale_, dtype=torch.float32, requires_grad=False))
+
+    def forward(self, x):
+        return x * self.scale + self.min_
+
 
 

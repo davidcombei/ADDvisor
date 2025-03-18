@@ -7,7 +7,7 @@ import torchaudio.transforms as T
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 #freeze the SSL model
 wav2vec2 = wav2vec2.to(device)
-wav2vec2.eval()
+#wav2vec2.eval()
 thresh = thresh - 5e-3 # due to venv differences the precision of features might deviate
 class AudioProcessor:
     def __init__(self, sampling_rate=16000, n_fft=1024, hop_length=322,win_length=644,  n_mels=80,audio_length =5):
@@ -50,20 +50,19 @@ class AudioProcessor:
         input_values = processor(audio, return_tensors="pt", sampling_rate=16000)
         input_values = input_values["input_values"].to(device)
 
-        with torch.no_grad():
-            output = wav2vec2(input_values, output_hidden_states=True)
+        #with torch.no_grad():
+        output = wav2vec2(input_values, output_hidden_states=True)
 
         return output.hidden_states[9]#.squeeze(0)
 
     def extract_features_istft(self, feats):
-
-        audio = torch.tensor(feats, dtype=torch.float32).to(device)
+        audio = feats.to(device)
 
         input_values = processor(audio, return_tensors="pt", sampling_rate=16000)
         input_values = input_values["input_values"].to(device)
 
-        with torch.no_grad():
-            output = wav2vec2(input_values, output_hidden_states=True)
+        #with torch.no_grad():
+        output = wav2vec2(input_values, output_hidden_states=True)
 
         return output.hidden_states[9]#.squeeze(0)
 
@@ -71,7 +70,6 @@ class AudioProcessor:
     ##### CLASSIFIER FORWARD PASS
     ############################
     def compute_forward_classifier(self, features):
-        """ Compute classifier decision score from extracted features. """
 
         if isinstance(features, torch.Tensor):
             features = features.squeeze(0)
@@ -105,14 +103,8 @@ class AudioProcessor:
                             )
         #compute the stft power , whihc is the magnitude raise to power of 0.5 ( LMAC model )
         X_stft_power = torch.abs(X_stft) ** 2
-        # obtain the mel-spectrogram from raw waveform with the parameters defined in the class
-        X_mel = self.mel_transform(waveform)
-        #compute the log1p mel-spectrogram -- Francesco suggestion
-        X_mel_log1p = torch.log1p(X_mel)
-        # compute log power STFT
-        X_stft_logpower = torch.log1p(X_stft_power)
 
-        return X_stft_logpower, X_mel_log1p, X_stft, X_stft_power
+        return  X_stft, X_stft_power
 
 
 
