@@ -298,7 +298,7 @@ class LMACLoss():
         # l_out = -criterion(mask_out_preds, class_pred)
 
         l_in = F.binary_cross_entropy_with_logits(mask_in_preds, class_pred.float())
-        l_out = F.binary_cross_entropy_with_logits(mask_out_preds, class_pred.float())
+        l_out = -F.binary_cross_entropy_with_logits(mask_out_preds, class_pred.float())
         # print("xhat requires grad:", xhat.requires_grad)
         # print("X_stft_power requires grad:", X_stft_power.requires_grad)
         # print("X_stft_phase requires grad:", X_stft_phase.requires_grad)
