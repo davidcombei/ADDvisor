@@ -1,2 +1,2 @@
-ADDvisor: Audio Deepfake Detection frequency-based explanation for time-domain classifiers
+ADDvisor: Audio Deepfake Detection frequency-based explanations for time-domain classifiers
 
