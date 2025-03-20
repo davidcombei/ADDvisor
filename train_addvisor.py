@@ -10,16 +10,11 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 audio_processor = AudioProcessor()
 addvisor = ADDvisor()
 loss = LMACLoss()
+
+
+model = ADDvisor().to(device)
 torch_log_reg = TorchLogReg().to(device)
 torch_scaler = TorchScaler().to(device)
-
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-
-
-
-
-model = ADDvisor(training=True).to(device)
 
 def train_addvisor(model, num_epochs, loss_fn, directory):
     optimizer = torch.optim.Adam(model.parameters(), lr=3e-6)
