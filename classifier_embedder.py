@@ -30,7 +30,7 @@ class TorchLogReg(nn.Module):
         return logits, probs
 
 
-#print(TorchLogReg())
+
 
 class TorchScaler(nn.Module):
     def __init__(self):
@@ -50,14 +50,10 @@ class TorchScaler(nn.Module):
 #####################################################################################
 
 
-def zero_mean_unit_var_norm(input_values: torch.Tensor):
-
-    mean = input_values.mean(dim=-1, keepdim=True)  # compute mean of each sample
-    #print('mean in processor grad_fn' ,mean.grad_fn)
-    std = input_values.std(dim=-1, keepdim=True)  # compute the std for each sample
-    #print('std in processor grad_fn' ,std.grad_fn)
-    normed_input_values = (input_values - mean) / (std + 1e-7)  # normalize
-    #print('normed_input_values in processor grad_fn' ,normed_input_values.grad_fn)
-    return normed_input_values#.detach()
+def zero_mean_unit_var_norm(input_values):
+    mean = input_values.mean(dim=-1, keepdim=True)
+    std = input_values.std(dim=-1, keepdim=True)
+    normed_input_values = (input_values - mean) / (std + 1e-7)
+    return normed_input_values
 
 
