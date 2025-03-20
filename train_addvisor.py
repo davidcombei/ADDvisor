@@ -41,7 +41,6 @@ def train_addvisor(model, num_epochs, loss_fn, directory):
                 #X_stft_power = X_stft_power.unsqueeze(0).to(device)
                 #X_stft_phase = X_stft_phase.unsqueeze(0).to(device)
                 mask = model(features)
-                print("mask grad:", mask.grad)
                 feats = torch.mean(features.squeeze(0), dim=0)
                 yhat1_logits, yhat1_probs = torch_log_reg(feats)
                 yhat1_probs = torch_scaler(yhat1_logits)
@@ -55,6 +54,7 @@ def train_addvisor(model, num_epochs, loss_fn, directory):
                 loss_value.backward()
                 print("mask.grad:", mask.grad)
                 optimizer.step()
+                print("mask grad:", mask.grad)
 
                 progress_bar.set_description(f"epoch {epoch+1}/{num_epochs} - loss: {loss_value.item():.4f}")
 
