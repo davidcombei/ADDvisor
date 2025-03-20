@@ -109,7 +109,7 @@ class ADDvisor(nn.Module):
         mask = self.sigmoid(x)
         # if not self.training:
         #     mask = (mask > self.threshold).float()
-
+        mask.retain_grad()
         return mask
 
 

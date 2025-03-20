@@ -1,4 +1,4 @@
-from classifier_embedder import wav2vec2, processor, classifier, scaler, thresh
+from classifier_embedder import wav2vec2, processor, classifier, scaler, thresh, zero_mean_unit_var_norm
 import torch
 import torchaudio
 import torchaudio.transforms as T
@@ -26,19 +26,25 @@ class AudioProcessor:
         )
 
     #############
-    ## JUST A WRAPPER FOR TORCHAUDIO
+    ## JUST A WRAPPER FOR TORCHAUDIO + RESAMPLING ( IF NEEDED )
     #############
-    def load_audio(self,audio_path):
+    def load_audio(self,audio_path, target_sr = 16000):
         audio, sr = torchaudio.load(audio_path)
-        return audio.squeeze(0), sr
+        if sr != target_sr:
+            resampler = T.Resample(orig_freq=sr, new_freq=target_sr)
+            audio = resampler(audio)
+        # requires grad = True to enable the gradient computational graph
+        audio = audio.requires_grad_(True)
+        return audio.squeeze(0), target_sr
 
 
     ###########################
     ####### EXTRACT FEATURES
     ###########################
+
     def extract_features(self, audio_path):
         audio, sr = self.load_audio(audio_path)
-
+        print('extract feats audio grad_fn' ,audio.grad_fn)
         length = int(self.audio_length * sr)
         current_length = audio.shape[0]
         if current_length < length:
@@ -46,25 +52,25 @@ class AudioProcessor:
         else:
             audio = audio[:length]
 
-        #audio = torch.tensor(audio, dtype=torch.float32).to(device)
-        audio = audio.squeeze(0)
-        audio = audio.to(device)
-        input_values = processor(audio, return_tensors="pt", sampling_rate=16000,padding=True)
-        input_values = input_values["input_values"].to(device)
+        audio = zero_mean_unit_var_norm(audio)
+
+        input_values = audio.unsqueeze(0).to(device)
 
         #with torch.no_grad():
         output = wav2vec2(input_values, output_hidden_states=True)
 
         return output.hidden_states[9]#.squeeze(0)
 
+
     def extract_features_istft(self, feats):
         audio = feats.to(device)
-
-        input_values = processor(audio, return_tensors="pt", sampling_rate=16000,padding=True)
-        input_values = input_values["input_values"].to(device)
-
-        #with torch.no_grad():
+        #print('istft audio grad_fn', audio.grad_fn) -- e ok
+        #input_values = processor(audio, return_tensors="pt", sampling_rate=16000,padding=True)#, normalize=True)
+        #input_values = input_values["input_values"].to(device)
+        audio = zero_mean_unit_var_norm(audio)
+        input_values = audio.unsqueeze(0).to(device)
         output = wav2vec2(input_values, output_hidden_states=True)
+        #print('istft output grad_fn', output.grad_fn)
 
         return output.hidden_states[9]#.squeeze(0)
 
@@ -102,9 +108,14 @@ class AudioProcessor:
                             return_complex=True # keep the magnitude and phase information
                             )
         #compute the stft power , whihc is the magnitude raise to power of 0.5 ( LMAC model )
-        X_stft_power = torch.abs(X_stft) ** 2
+        #X_stft_power = torch.pow(torch.abs(X_stft),2)
+        magnitude = X_stft.abs()
+        phase = X_stft.angle()
+        #print(magnitude)
 
-        return  X_stft, X_stft_power
+        return  X_stft, magnitude, phase #, X_stft_power
+
+
 
 
 

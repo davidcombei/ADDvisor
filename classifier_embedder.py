@@ -1,5 +1,5 @@
 import joblib
-from transformers import Wav2Vec2Model, AutoFeatureExtractor
+from transformers import Wav2Vec2Model, AutoFeatureExtractor, Wav2Vec2FeatureExtractor
 import torch.nn as nn
 import torch
 from sklearn.preprocessing import MinMaxScaler
@@ -34,12 +34,30 @@ class TorchLogReg(nn.Module):
 
 class TorchScaler(nn.Module):
     def __init__(self):
-        super(TorchScaler,self).__init__()
+        super(TorchScaler, self).__init__()
         self.register_buffer("min_", torch.tensor(scaler.min_, dtype=torch.float32, requires_grad=False))
-        self.register_buffer("scale", torch.tensor(scaler.scale_, dtype=torch.float32, requires_grad=False))
+        self.register_buffer("scale_", torch.tensor(scaler.scale_, dtype=torch.float32, requires_grad=False))
 
     def forward(self, x):
-        return x * self.scale + self.min_
+        if x.dim() == 1:
+            x = x.view(-1, 1)
 
+        return x * self.scale_ + self.min_
+
+
+#####################################################################################
+### Wav2Vec2FeatureExtractor Torch Version to allow computation graph for decoder mask
+#####################################################################################
+
+
+def zero_mean_unit_var_norm(input_values: torch.Tensor):
+
+    mean = input_values.mean(dim=-1, keepdim=True)  # compute mean of each sample
+    #print('mean in processor grad_fn' ,mean.grad_fn)
+    std = input_values.std(dim=-1, keepdim=True)  # compute the std for each sample
+    #print('std in processor grad_fn' ,std.grad_fn)
+    normed_input_values = (input_values - mean) / (std + 1e-7)  # normalize
+    #print('normed_input_values in processor grad_fn' ,normed_input_values.grad_fn)
+    return normed_input_values#.detach()
 
 
