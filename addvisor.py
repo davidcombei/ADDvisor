@@ -5,41 +5,6 @@ import torch.nn.functional as F
 audio_processor = AudioProcessor()
 
 
-#########################
-### important info from paper
-"""
-The decoder applies the mask
-not directly to the specific input features of the pretrained
-classifier but to the magnitude of Short-Time Fourier Transform (STFT) of the original input audio waveform
-
-
- 
-The decoder of
-L-MAC consists of a series of transposed 2D convolutional layers. Each convolutional layer upsamples the time and
-frequency axis. The classifier’s representations are fed to the
-decoder in a U-Net-like fashion to incorporate information
-at different time-frequency resolutions (as shown in Figure
-5 in Appendix A). Specifically, the decoder takes the four
-deepest representations of the classifier.
-
-
-"""
-
-
-#############
-# notite pt mine
-"""
-
-binary mask care pastreaza doar partile relevante ( 1 ) iar partile irelevante vor fi silenced ( inmultire cu 0 ) 
- masca o voi lasa trainable ( doar sigmoid aplicat) dupa o voi binariza in momentul inferentei cu un threshold
- -- am pus deja parametrii in arhitectura
- 
- By inheriting the phase from the original signal, we can perform the Inverse Short-Time Fourier Transform to generate listanable maps 
- = > acelasi lucru pentru clasificatorul nostru  pt yhat2
- 
- 
-"""
-
 ####################################
 #### DEFINE THE DECODER ############
 ####################################
@@ -71,6 +36,7 @@ class ADDvisor(nn.Module):
         x = F.relu(self.conv1(x))
         x = F.relu(self.conv2(x))
         x = self.conv3(x)
+
 
         return x
 

@@ -29,71 +29,79 @@ class AudioProcessor:
     #############
     def load_audio(self,audio_path, target_sr = 16000):
         audio, sr = torchaudio.load(audio_path)
+        if audio.ndim > 1:
+            audio = audio.squeeze(0)
         if sr != target_sr:
             resampler = T.Resample(orig_freq=sr, new_freq=target_sr)
             audio = resampler(audio)
-        return audio.squeeze(0), target_sr
+        length = int(self.audio_length * target_sr)
+
+        current_length = audio.shape[0]
+        if current_length < length:
+            audio = F.pad(audio, (0, length - current_length))
+        else:
+            audio = audio[:length]
+        return audio, target_sr
 
 
     ###########################
     ####### EXTRACT FEATURES
     ###########################
 
-    def extract_features(self, audio_path):
-        audio, sr = self.load_audio(audio_path)
+    def extract_features(self, waveforms):
+        #audio, sr = self.load_audio(audio_path)
         #print('extract feats audio grad_fn' ,audio.grad_fn)
-        length = int(self.audio_length * sr)
-        current_length = audio.shape[0]
-        if current_length < length:
-            audio = F.pad(audio, (0, length - current_length))
-        else:
-            audio = audio[:length]
+        audio = zero_mean_unit_var_norm(waveforms)
 
-        audio = zero_mean_unit_var_norm(audio)
-
-        input_values = audio.unsqueeze(0).to(device)
+        input_values = audio.to(device)
 
         output = wav2vec2(input_values, output_hidden_states=True)
-
-        return output.hidden_states[9]#.squeeze(0)
+        return output.hidden_states[9].squeeze(0)
 
 
     def extract_features_istft(self, feats):
         audio = feats.to(device)
         audio = zero_mean_unit_var_norm(audio)
-        input_values = audio.unsqueeze(0).to(device)
+        input_values = audio.to(device)
         output = wav2vec2(input_values, output_hidden_states=True)
 
-        return output.hidden_states[9]#.squeeze(0)
+        return output.hidden_states[9].squeeze(0)
 
 
     ###################################################################
     ### COMPUTE THE STFT TO GET THE SPECTROGRAMS AND PHASE INFORMATION
     ###################################################################
-    def compute_stft(self,waveform):
-        #obtain the spectrogram using stft
-        length = int(self.audio_length * self.sampling_rate)
-        current_length = waveform.shape[0]
-        if current_length < length:
-            waveform = F.pad(waveform, (0, length - current_length))
+    def compute_stft(self, waveform):
+        if waveform.dim() == 1:
+            length = int(self.audio_length * self.sampling_rate)
+            current_length = waveform.shape[0]
+            if current_length < length:
+                waveform = F.pad(waveform, (0, length - current_length))
+            else:
+                waveform = waveform[:length]
+            waveform = waveform.to(device)
+        elif waveform.dim() == 2:
+            length = int(self.audio_length * self.sampling_rate)
+            current_length = waveform.shape[1]
+            if current_length < length:
+                waveform = F.pad(waveform, (0, length - current_length))
+            else:
+                waveform = waveform[:, :length]
+            waveform = waveform.to(device)
         else:
-            waveform = waveform[:length]
-        waveform = waveform.to(device)
-        X_stft = torch.stft(waveform,
-                            n_fft=self.n_fft,
-                            hop_length=self.hop_length,
-                            win_length=self.win_length,
-                            return_complex=True # keep the magnitude and phase information
-                            )
+            raise ValueError("waveform must be 1D (single) or 2D (batched waveforms)")
 
+        X_stft = torch.stft(
+            waveform,
+            n_fft=self.n_fft,
+            hop_length=self.hop_length,
+            win_length=self.win_length,
+            return_complex=True
+        )
         magnitude = X_stft.abs()
         phase = X_stft.angle()
 
-        return  X_stft, magnitude, phase #, X_stft_power
-
-
-
-
+        return X_stft, magnitude, phase
 
     #####################################################################################################
     ###### COMPUTE THE ISTFT TO GET THE AUDIO FROM THE MASKED SPECTROGRAM OBTAINED BY THE DECODER
