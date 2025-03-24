@@ -25,7 +25,7 @@ class AudioProcessor:
         )
 
     #############
-    ## JUST A WRAPPER FOR TORCHAUDIO + RESAMPLING ( IF NEEDED )
+    ## JUST A WRAPPER FOR TORCHAUDIO + RESAMPLING ( IF NEEDED ) + PAD/CROP 
     #############
     def load_audio(self,audio_path, target_sr = 16000):
         audio, sr = torchaudio.load(audio_path)
