@@ -1,3 +1,3 @@
-ADDvisor: Frequency-based explanations from time-domain classifiers
+ADDvisor: Frequency-based explanations for time-domain classifiers
 
 
