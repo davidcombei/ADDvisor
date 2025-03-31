@@ -43,13 +43,13 @@ torch_scaler = TorchScaler().to(device)
 
 
 def find_all_wav_files(root_dir):
-    video_files = []
+    audio_files = []
     for dirpath, dirnames, filenames in os.walk(root_dir):
         for file in filenames:
             if file.endswith(".wav"):
                 full_path = os.path.join(dirpath, file)
-                video_files.append(full_path)
-    return video_files
+                audio_files.append(full_path)
+    return audio_files
 
 
 
