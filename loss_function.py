@@ -32,12 +32,8 @@ class LMACLoss():
         irelevant_mask_mag = (1 - xhat) * X_stft_power[:, :Tmax, :] # the irelevant parts of the spectrogram
         relevant_mask = relevant_mask_mag * torch.exp(1j * X_stft_phase[:, :Tmax, :])
         irelevant_mask = irelevant_mask_mag * torch.exp(1j * X_stft_phase[:, :Tmax, :])
-        # relevant_mask = relevant_mask.squeeze(0)
-        # irelevant_mask = irelevant_mask.squeeze(0)
         istft_relevant_mask = audio_processor.compute_invert_stft(relevant_mask)
         istft_irelevant_mask = audio_processor.compute_invert_stft(irelevant_mask)
-        # istft_relevant_mask = istft_relevant_mask.squeeze(0)
-        # istft_irelevant_mask = istft_irelevant_mask.squeeze(0)
         relevant_mask_waveform = audio_processor.extract_features_istft(istft_relevant_mask)
         irelevant_mask_waveform = audio_processor.extract_features_istft(istft_irelevant_mask)
         relevant_mask_feats = torch.mean(relevant_mask_waveform.squeeze(0), dim=1)
@@ -49,7 +45,6 @@ class LMACLoss():
         irelevant_mask_logits = torch_scaler(irelevant_mask_logits)
 
 
-        # issues might arrise here due to logits scaled applied to the cross entropy that applies sigmoid
         l_in = F.binary_cross_entropy_with_logits(relevant_mask_logits, class_pred.to(device))
         l_out = -F.binary_cross_entropy_with_logits(irelevant_mask_logits, class_pred.to(device))
         ao_loss = self.l_in_w * l_in + self.l_out_w * l_out
@@ -59,7 +54,7 @@ class LMACLoss():
         # tv_h = torch.sum(torch.abs(xhat[:, :, :-1] - xhat[:, :, 1:]))  # horizontal differences
         # tv_w = torch.sum(torch.abs(xhat[:, :-1, :] - xhat[:, 1:, :]))  # vertical differences
         # reg_tv = (tv_h + tv_w) * self.reg_w_tv
-        # reg_loss = reg_l1 #+ reg_tv
+        reg_loss = reg_l1 #+ reg_tv
 
         total_loss = ao_loss #+ reg_loss
         return total_loss
