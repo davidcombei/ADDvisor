@@ -3,8 +3,11 @@ import torch
 import torchaudio
 import torchaudio.transforms as T
 import torch.nn.functional as F
+from accelerate import Accelerator
+#device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+accelerator = Accelerator()
+device = accelerator.device
 wav2vec2 = wav2vec2.to(device)
 wav2vec2.eval()
 thresh = thresh - 5e-3 # due to venv differences the precision of features might deviate
@@ -25,7 +28,7 @@ class AudioProcessor:
         )
 
     #############
-    ## JUST A WRAPPER FOR TORCHAUDIO + RESAMPLING ( IF NEEDED ) + PAD/CROP 
+    ## JUST A WRAPPER FOR TORCHAUDIO + RESAMPLING ( IF NEEDED )
     #############
     def load_audio(self,audio_path, target_sr = 16000):
         audio, sr = torchaudio.load(audio_path)

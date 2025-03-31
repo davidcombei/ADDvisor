@@ -42,10 +42,20 @@ torch_scaler = TorchScaler().to(device)
 
 
 
+def find_all_wav_files(root_dir):
+    video_files = []
+    for dirpath, dirnames, filenames in os.walk(root_dir):
+        for file in filenames:
+            if file.endswith(".wav"):
+                full_path = os.path.join(dirpath, file)
+                video_files.append(full_path)
+    return video_files
+
+
 
 class AudioDataset(Dataset):
     def __init__(self, directory, audio_processor, device):
-        self.file_paths = [os.path.join(directory, f) for f in os.listdir(directory) if f.endswith('.wav')]
+        self.file_paths = find_all_wav_files(directory)
         self.audio_processor = audio_processor
         self.device = device
 
@@ -68,7 +78,7 @@ def collate_fn(batch):
     thresh_tensor = torch.tensor(thresh, device=yhat_logits.device, dtype=yhat_logits.dtype)
     class_pred = (yhat_logits > thresh_tensor).float()
 
-    return features, magnitude, phase, class_pred
+    return features, magnitude, phase, class_pred #, yhat_logits
 
 
 def train_addvisor(model, num_epochs, loss_fn, data_loader, save_path):
@@ -81,7 +91,7 @@ def train_addvisor(model, num_epochs, loss_fn, data_loader, save_path):
                 magnitude = magnitude.to(device)
                 phase = phase.to(device)
                 class_pred = class_pred.to(device)
-                
+                #yhat_logits = yhat_logits.to(device)
                 mask = model(features)
                 loss_value = loss_fn.loss_function(mask, magnitude,phase, class_pred)
                 optimizer.zero_grad()
@@ -95,13 +105,14 @@ def train_addvisor(model, num_epochs, loss_fn, data_loader, save_path):
                 progress_bar.set_postfix({'loss': f'{loss_value.item():.4f}'})
         avg_loss = total_loss / len(data_loader)
         #scheduler.step(avg_loss)
-        checkpoint_path = os.path.join(save_path, f"addvisor_REGULARIZED_epoch_{epoch+1}_loss_{avg_loss:.4f}.pth")
+        checkpoint_path = os.path.join(save_path, f"addvisor_MLAAD_epoch_{epoch+1}_loss_{avg_loss:.4f}.pth")
         #torch.save(model.state_dict(), checkpoint_path)
     
         accelerator.save(model.state_dict(), checkpoint_path)
                          
 
-dir_path = '/mnt/QNAP/comdav/DATA/DATA/in-the-wild/wav/'
+#dir_path = '/mnt/QNAP/comdav/partial_spoof/eval/con_wav/'
+dir_path = '/mnt/QNAP/comdav/MLAAD_v5/'
 save_path = '/mnt/QNAP/comdav/addvisor_savedV2/'
 
 

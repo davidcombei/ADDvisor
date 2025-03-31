@@ -36,8 +36,8 @@ class ADDvisor(nn.Module):
         x = F.relu(self.conv1(x))
         x = F.relu(self.conv2(x))
         x = self.conv3(x)
+        mask = torch.sigmoid(x)
 
-
-        return x
+        return mask
 
 

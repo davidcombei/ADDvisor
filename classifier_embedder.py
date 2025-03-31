@@ -7,9 +7,9 @@ from sklearn.preprocessing import MinMaxScaler
 #####################
 ### LOAD WAV2VEC + LogReg
 #####################
-classifier,scaler, thresh = joblib.load(r'C:\Users\david\PycharmProjects\David2\model\logreg_margin_pruning_ALL_with_scaler_threshold.joblib')
+classifier,scaler, thresh = joblib.load('/mnt/QNAP/comdav/addvisor/models/logreg_margin_pruning_ALL_with_scaler_threshold.joblib')
 processor = AutoFeatureExtractor.from_pretrained("facebook/wav2vec2-xls-r-2b")
-wav2vec2 = Wav2Vec2Model.from_pretrained(r"C:\Users\david\PycharmProjects\David2\model\wav2vec2-xls-r-2b_truncated")
+wav2vec2 = Wav2Vec2Model.from_pretrained("/mnt/QNAP/comdav/addvisor/models/wav2vec2-xls-r-2b_truncated")
 for param in wav2vec2.parameters():
     param.requires_grad = False
 
