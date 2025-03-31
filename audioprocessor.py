@@ -53,21 +53,12 @@ class AudioProcessor:
 
     def extract_features(self, waveforms):
         #audio, sr = self.load_audio(audio_path)
-        #print('extract feats audio grad_fn' ,audio.grad_fn)
+        #print('extract feats audio grad_fn' ,audio.grad_fn)        
         audio = zero_mean_unit_var_norm(waveforms)
-
+        
         input_values = audio.to(device)
 
         output = wav2vec2(input_values, output_hidden_states=True)
-        return output.hidden_states[9].squeeze(0)
-
-
-    def extract_features_istft(self, feats):
-        audio = feats.to(device)
-        audio = zero_mean_unit_var_norm(audio)
-        input_values = audio.to(device)
-        output = wav2vec2(input_values, output_hidden_states=True)
-
         return output.hidden_states[9].squeeze(0)
 
 
@@ -107,7 +98,7 @@ class AudioProcessor:
         return X_stft, magnitude, phase
 
     #####################################################################################################
-    ###### COMPUTE THE ISTFT TO GET THE AUDIO FROM THE MASKED SPECTROGRAM OBTAINED BY THE DECODER
+    ###### COMPUTE THE ISTFT TO GET THE AUDIOS FROM THE MASKED SPECTROGRAMS OBTAINED BY THE DECODER
     #####################################################################################################
     def compute_invert_stft(self, spectrogram):
         if not torch.is_complex(spectrogram):
