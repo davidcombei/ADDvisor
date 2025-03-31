@@ -91,22 +91,15 @@ def train_addvisor(model, num_epochs, loss_fn, data_loader, save_path):
                 magnitude = magnitude.to(device)
                 phase = phase.to(device)
                 class_pred = class_pred.to(device)
-                #yhat_logits = yhat_logits.to(device)
                 mask = model(features)
                 loss_value = loss_fn.loss_function(mask, magnitude,phase, class_pred)
                 optimizer.zero_grad()
                 loss_value.backward()
                 optimizer.step()
                 total_loss += loss_value.item()
-                # for name, param in model.named_parameters():
-                #     print(f"{name}: requires_grad={param.requires_grad}")
-                #avg_loss = total_loss / len(data_loader)
-                #current_lr = optimizer.param_groups[0]['lr']
                 progress_bar.set_postfix({'loss': f'{loss_value.item():.4f}'})
         avg_loss = total_loss / len(data_loader)
-        #scheduler.step(avg_loss)
         checkpoint_path = os.path.join(save_path, f"addvisor_MLAAD_epoch_{epoch+1}_loss_{avg_loss:.4f}.pth")
-        #torch.save(model.state_dict(), checkpoint_path)
     
         accelerator.save(model.state_dict(), checkpoint_path)
                          
@@ -117,7 +110,6 @@ save_path = '/mnt/QNAP/comdav/addvisor_savedV2/'
 
 
 optimizer = torch.optim.Adam(model.parameters(), lr=3e-5)
-#scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=1, threshold=0.002,min_lr=1e-7, verbose=True)
 
 
 BATCH_SIZE = 24
