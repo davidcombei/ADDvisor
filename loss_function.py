@@ -28,15 +28,22 @@ class LMACLoss():
         self.reg_w_tv = reg_w_tv #default 0.00
 
 
-    def loss_function(self, xhat, X_stft_power,X_stft_phase, class_pred,):
+    def loss_function(self, xhat, X_stft_mag ,X_stft_phase, class_pred,):
 
 
         Tmax = xhat.shape[1]
         power = 2
-        relevant_mask_mag = xhat * X_stft_power[:, :Tmax, :]  # the relevant parts of the spectrogram
-        irelevant_mask_mag = (1 - xhat) * X_stft_power[:, :Tmax, :] # the irelevant parts of the spectrogram
+#        relevant_mask_mag = xhat * X_stft_power[:, :Tmax, :]  # the relevant parts of the spectrogram
+#        irelevant_mask_mag = (1 - xhat) * X_stft_power[:, :Tmax, :] # the irelevant parts of the spectrogram
+
+        log_mag = torch.log1p(X_stft_mag[:, :Tmax, :]) 
+        relevant_log_mag = xhat * log_mag
+        irrelevant_log_mag = (1 - xhat) * log_mag
+        relevant_mask_mag = torch.expm1(relevant_log_mag)
+        irrelevant_mask_mag = torch.expm1(irrelevant_log_mag)
+
         relevant_mask = relevant_mask_mag * torch.exp(1j * X_stft_phase[:, :Tmax, :])
-        irelevant_mask = irelevant_mask_mag * torch.exp(1j * X_stft_phase[:, :Tmax, :])
+        irelevant_mask = irrelevant_mask_mag * torch.exp(1j * X_stft_phase[:, :Tmax, :])
         
         
         istft_relevant_mask = audio_processor.compute_invert_stft(relevant_mask)
