@@ -23,16 +23,6 @@ loss = LMACLoss()
 #checkpoint_path = '/mnt/QNAP/comdav/addvisor_savedV2/addvisor_REGULARIZED_epoch_20_loss_2.5003.pth'
 #checkpoint = torch.load(checkpoint_path, map_location=device)
 
-
-#the saved checkpoint is accelerate format... remove it
-#if any(k.startswith("module.") for k in checkpoint.keys()):
-#    new_state_dict = OrderedDict()
-#    for k, v in checkpoint.items():
-#        new_key = k.replace("module.", "")
-#        new_state_dict[new_key] = v
-#    checkpoint = new_state_dict
-
-
 model = ADDvisor().to(device)
 #model.load_state_dict(checkpoint)
 
