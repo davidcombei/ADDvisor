@@ -23,6 +23,16 @@ loss = LMACLoss()
 #checkpoint_path = '/mnt/QNAP/comdav/addvisor_savedV2/addvisor_REGULARIZED_epoch_20_loss_2.5003.pth'
 #checkpoint = torch.load(checkpoint_path, map_location=device)
 
+
+#the saved checkpoint is accelerate format... remove it
+#if any(k.startswith("module.") for k in checkpoint.keys()):
+#    new_state_dict = OrderedDict()
+#    for k, v in checkpoint.items():
+#        new_key = k.replace("module.", "")
+#        new_state_dict[new_key] = v
+#    checkpoint = new_state_dict
+
+
 model = ADDvisor().to(device)
 #model.load_state_dict(checkpoint)
 
@@ -57,8 +67,8 @@ def find_all_wav_files2(root_dir, max_files=None):
 
 class AudioDataset(Dataset):
     def __init__(self, directory1, directory2, audio_processor, device):
-        files1 = find_all_wav_files2(directory1, max_files=10000)
-        files2 = find_all_wav_files2(directory2, max_files=10000)
+        files1 = find_all_wav_files2(directory1, max_files=5000)
+        files2 = find_all_wav_files2(directory2, max_files=5000)
         self.file_paths = files1 + files2
         self.audio_processor = audio_processor
         self.device = device
@@ -79,7 +89,7 @@ def collate_fn(batch):
     features = audio_processor.extract_features(waveforms)
     feats_mean = torch.mean(features, dim=1)
     yhat_logits, _ = torch_log_reg(feats_mean)
-    yhat = torch_scaler(yhat_logits)
+    #yhat = torch_scaler(yhat_logits)
     #thresh_tensor = torch.tensor(thresh, device=yhat_logits.device, dtype=yhat_logits.dtype)
 #    class_pred = (yhat_logits > thresh_tensor).float()
     
@@ -113,7 +123,7 @@ def train_addvisor(model, num_epochs, loss_fn, data_loader, save_path):
                     last_yhat = yhat_logits
                     last_yhat_relevant = yhat_relevant
                     last_yhat_irrelevant = yhat_irrelevant
-                
+                    print("avg mask values: ",mask.mean().item())
                 progress_bar.set_postfix({'loss': f'{loss_value.item():.4f}'})
         avg_loss = total_loss / len(data_loader)
         checkpoint_path = os.path.join(save_path, f"addvisor_epoch_{epoch+1}_loss_{avg_loss:.4f}.pth")
@@ -126,12 +136,12 @@ def train_addvisor(model, num_epochs, loss_fn, data_loader, save_path):
 #dir_path = '/mnt/QNAP/comdav/partial_spoof/eval/con_wav/'
 dir_path1 = '/mnt/QNAP/comdav/MLAAD_v5/'
 dir_path2 = '/mnt/QNAP/comdav/m-ailabs/'
-save_path = '/mnt/QNAP/comdav/addvisor_savedV6/'
+save_path = '/mnt/QNAP/comdav/addvisor_savedV7/'
 
 optimizer = torch.optim.Adam(model.parameters(), lr=3e-5)
 
 
-BATCH_SIZE = 20
+BATCH_SIZE = 21
 dataset = AudioDataset(directory1 = dir_path1,
                        directory2 = dir_path2,
                        audio_processor = audio_processor,
