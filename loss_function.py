@@ -15,15 +15,12 @@ torch_scaler = TorchScaler().to(device)
 
 
 class LMACLoss():
-    def __init__(self, l_in_w=4.0, l_out_w=0.4, reg_w_l1=5, reg_w_tv=0.00,
-                 sparsity_max_proportion=0.3, sparsity_weight=15.0, hard_thresh=0.25):
+    def __init__(self, l_in_w=4.0, l_out_w=0.4, reg_w_l1=5, reg_w_tv=0.00):
         self.l_in_w = l_in_w
         self.l_out_w = l_out_w
         self.reg_w_l1 = reg_w_l1
         self.reg_w_tv = reg_w_tv
-        self.sparsity_max_proportion = sparsity_max_proportion
-        self.sparsity_weight = sparsity_weight
-        self.hard_thresh = hard_thresh
+
 
 
     def loss_function(self, xhat, X_stft_power,X_stft_phase, class_pred):
