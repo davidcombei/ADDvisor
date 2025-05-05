@@ -72,7 +72,7 @@ def compute_fidelity(theta_out, predictions, threshold=torch.tensor(thresh)):
     return fidelity
 ################################################################
 # get the probability score for the predicted class, not the probability for the sample being real (real has label 1)
-# e.g. if the prob is 0.8 - > real (1 ) -> returns 0.8, but if the prob is 0.2, it return 1- 0.2 = 0.8 probability of it being fake
+# e.g. if the prob is 0.8 - > real (1 ) -> returns 0.8, but if the output prob of logReg is 0.2, it return 1- 0.2 = 0.8 probability of it being fake
 ################################################################
 def get_score_for_predicted_class(p):
     pred = (p > 0.5).float()
